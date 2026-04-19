@@ -1,13 +1,17 @@
 ---
 description: "Audit agent context window utilization from Copilot Chat debug logs and produce optimization recommendations."
 agent: "11-Context Optimizer"
-model: "Claude Opus 4.6"
 ---
 
 # Context Window Audit
 
 Analyze Copilot Chat debug logs to identify context bloat, redundant file reads, and optimization
 opportunities across agents.
+
+## Prerequisites
+
+- Copilot Chat debug logging enabled in VS Code
+- Log files at `~/.vscode-server/data/logs/*/exthost1/GitHub.copilot-chat/`
 
 ## Instructions
 

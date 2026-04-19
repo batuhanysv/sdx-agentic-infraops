@@ -1,5 +1,5 @@
 {
-  "name": "Agentic InfraOps",
+  "name": "APEX",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
 
   "features": {
@@ -15,7 +15,8 @@
       "installTools": false
     },
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
+      "version": "lts",
+      "pnpmVersion": "none"
     },
     "ghcr.io/devcontainers/features/github-cli:1": {
       "version": "latest"
@@ -24,12 +25,18 @@
       "tflint": "0.61.0",
       "installTFsec": false
     },
-    "ghcr.io/devcontainers/features/go:1": {}
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.24.2"
+    },
+    "ghcr.io/devcontainers-community/features/deno": {
+      "version": "latest"
+    },
+    "ghcr.io/azure/azure-dev/azd:latest": {}
   },
 
   // Lifecycle commands - chain apt operations to avoid lock conflicts
   // Lifecycle: onCreateCommand runs first (system packages + uv), then postCreateCommand (tools), then postStartCommand (updates)
-  "onCreateCommand": "set -e; sudo rm -f /etc/apt/sources.list.d/yarn.list 2>/dev/null; sudo apt-get update; sudo apt-get install -y graphviz dos2unix; dos2unix .devcontainer/*.sh 2>/dev/null || true; curl -LsSf https://astral.sh/uv/install.sh | sh",
+  "onCreateCommand": "set -e; sudo rm -f /etc/apt/sources.list.d/yarn.list 2>/dev/null; sudo apt-get update; sudo apt-get install -y graphviz dos2unix; sudo install -d -m 0755 -o vscode -g vscode \"$HOME/.cache\" \"$HOME/.local/bin\"; dos2unix .devcontainer/*.sh 2>/dev/null || true; curl -LsSf https://astral.sh/uv/install.sh | sh",
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "postStartCommand": "bash .devcontainer/post-start.sh && (npx lefthook install 2>/dev/null || true)",
 
@@ -38,10 +45,12 @@
     "PYTHONDONTWRITEBYTECODE": "1",
     "PYTHONUNBUFFERED": "1",
     "UV_CACHE_DIR": "/home/vscode/.cache/uv",
-    "TF_PLUGIN_CACHE_DIR": "/home/vscode/.terraform.d/plugin-cache"
+    "TF_PLUGIN_CACHE_DIR": "/home/vscode/.terraform.d/plugin-cache",
+    "DENO_DIR": "/home/vscode/.cache/deno"
   },
 
   "remoteEnv": {
+    "PATH": "${containerEnv:PATH}",
     "AZURE_DEFAULTS_LOCATION": "swedencentral",
     // Pass GH_TOKEN from host → container. gh CLI uses it automatically, no `gh auth login` needed.
     // Each user sets this once in VS Code User Settings (Ctrl+,):
@@ -79,7 +88,9 @@
         "redhat.vscode-yaml",
         "mutantdino.resourcemonitor",
         "HashiCorp.terraform",
-        "ms-azuretools.vscode-azureterraform"
+        "ms-azuretools.vscode-azureterraform",
+        "hediet.vscode-drawio",
+        "denoland.vscode-deno"
       ],
       "settings": {
         "chat.customAgentInSubagent.enabled": true,
@@ -90,6 +101,15 @@
         "chat.agentSkillsLocations": {
           ".github/skills": true
         },
+        "chat.hookFilesLocations": {
+          ".github/hooks/tool-guardian": true,
+          ".github/hooks/secrets-scanner": true,
+          ".github/hooks/session-logger": true,
+          ".github/hooks/governance-audit": true,
+          ".github/hooks/post-edit-format": true,
+          ".github/hooks/subagent-validation": true
+        },
+        "chat.useCustomAgentHooks": true,
         "chat.useAgentSkills": true,
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -124,7 +144,11 @@
         "markdownlint.config": {
           "extends": "${workspaceFolder}/.markdownlint-cli2.jsonc"
         },
-        "markdownlint.run": "onSave"
+        "markdownlint.run": "onSave",
+        "deno.enable": false,
+        "deno.enablePaths": ["mcp/drawio-mcp-server"],
+        "deno.lint": true,
+        "deno.unstable": []
       }
     }
   },

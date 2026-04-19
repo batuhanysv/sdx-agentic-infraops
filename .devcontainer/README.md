@@ -1,8 +1,8 @@
-# Development Container for Agentic InfraOps
+# Development Container for APEX
 
 > **[Version](../VERSION.md)**
 
-This devcontainer provides a **complete, pre-configured development environment** for Agentic InfraOps.
+This devcontainer provides a **complete, pre-configured development environment** for APEX.
 It includes all required tools, extensions, and configurations to build Azure infrastructure with AI agents.
 
 **Base Image:** `mcr.microsoft.com/devcontainers/base:ubuntu-24.04`
@@ -42,7 +42,7 @@ It includes all required tools, extensions, and configurations to build Azure in
 - **matplotlib**, **pillow** - Image processing
 - **checkov** - Infrastructure security scanner
 
-### VS Code Extensions (26 Pre-installed)
+### VS Code Extensions (Pre-installed)
 
 - ✅ **GitHub Copilot** + Copilot Chat + Mermaid Diagrams
 - ✅ **Python** (IntelliSense via Pylance, linting, debugging)
@@ -151,7 +151,7 @@ az account set --subscription "<your-subscription-id>"
 az bicep version && pwsh --version
 
 # 4. Explore docs and infrastructure
-cd docs/prompt-guide/ && ls -la
+cd site/src/content/docs/ && ls -la
 cd ../../infra/bicep/ && tree -L 2
 ```
 
@@ -163,6 +163,21 @@ cd ../../infra/bicep/ && tree -L 2
 | ------------------------- | ---------------------- | ----------------------------------------------------------------------------------- |
 | `AZURE_DEFAULTS_LOCATION` | `swedencentral`        | Default Azure region (matches repo guidelines)                                      |
 | `GH_TOKEN`                | `${localEnv:GH_TOKEN}` | GitHub PAT set in VS Code User Settings; enables `gh` CLI without interactive login |
+
+### Azure CLI Extension Auto-Install
+
+The devcontainer configures Azure CLI during `post-create.sh` so extension-backed commands do not
+pause for interactive install prompts:
+
+```bash
+az config set extension.use_dynamic_install=yes_without_prompt
+az config set extension.dynamic_install_allow_preview=false
+```
+
+This removes warnings such as `Run 'az config set extension.use_dynamic_install=yes_without_prompt'`
+when Azure CLI needs an extension. Preview extensions remain opt-in; if you explicitly want Azure
+CLI to auto-install preview extensions too, change `extension.dynamic_install_allow_preview` to
+`true` in your own `~/.azure/config`.
 
 ### Azure Credentials Mount
 
@@ -226,7 +241,7 @@ installs all tools from scratch including the Go and Terraform features.
 | Azure auth fails      | Use `az login --use-device-code`                         |
 | Rebuild needed        | `F1` → `Dev Containers: Rebuild Container Without Cache` |
 
-📖 **Full troubleshooting guide:** [docs/troubleshooting.md](../docs/troubleshooting.md)
+📖 **Full troubleshooting guide:** [Troubleshooting](https://jonathan-vella.github.io/azure-agentic-infraops/guides/troubleshooting/)
 
 ## 📊 Resource Usage
 
@@ -246,8 +261,8 @@ installs all tools from scratch including the Go and Terraform features.
 
 ## 📚 Related Documentation
 
-- [Workflow Guide](../docs/workflow.md)
-- [Prompt Guide](../docs/prompt-guide/)
+- [Workflow Guide](https://jonathan-vella.github.io/azure-agentic-infraops/concepts/workflow/)
+- [Prompt Guide](https://jonathan-vella.github.io/azure-agentic-infraops/guides/prompt-guide/)
 - [Copilot Instructions](../.github/copilot-instructions.md)
 - [Repository README](../README.md)
 

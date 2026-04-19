@@ -22,6 +22,25 @@
         "registry"
       ],
       "env": {}
+    },
+    "microsoft-learn": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp?maxTokenBudget=4000"
+    },
+    "astro-docs": {
+      "type": "http",
+      "url": "https://mcp.docs.astro.build/mcp"
+    },
+    "drawio": {
+      "type": "stdio",
+      "command": "deno",
+      "args": [
+        "run",
+        "-P",
+        "--no-check",
+        "--cached-only",
+        "${workspaceFolder}/mcp/drawio-mcp-server/src/index.ts"
+      ]
     }
   }
 }

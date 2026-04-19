@@ -4,7 +4,7 @@ toc_depth: 2
 
 # :material-book-alphabet: Glossary
 
-Quick reference for terms used throughout Agentic InfraOps documentation.
+Quick reference for terms used throughout APEX documentation.
 
 ## A
 
@@ -26,12 +26,12 @@ Used to record "why" decisions were made for future reference.
 ### Agent (Custom)
 
 A specialized AI assistant defined in `.github/agents/` that focuses on specific workflow steps.
-Invoked via `Ctrl+Shift+A`. This project includes 16 top-level agents (including two Conductor
-variants, a Governance agent, and a Context Optimizer) plus 11 subagents.
+Invoked via `Ctrl+Shift+A`. This project includes top-level agents (including two Orchestrator
+variants, a Governance agent, and a Context Optimizer) plus subagents.
 
 📁 **See**: [.github/agents/](https://github.com/jonathan-vella/azure-agentic-infraops/tree/main/.github/agents)
 
-### Agentic InfraOps
+### APEX
 
 The methodology of using coordinated AI agents and skills to transform requirements into deploy-ready
 Azure infrastructure. Combines GitHub Copilot with custom agents and reusable skills.
@@ -106,7 +106,7 @@ closest to users. Azure CDN / Azure Front Door accelerate static asset delivery.
 Adversarial review agent that challenges requirements, architecture assessments, and
 implementation plans. Finds untested assumptions, governance gaps, WAF blind spots,
 and architectural weaknesses. Returns structured JSON findings with severity ratings.
-Auto-invoked by the Conductor after Steps 1, 2, and 4.
+Auto-invoked by the Orchestrator after Steps 1, 2, and 4.
 
 📁 **See**: [.github/agents/10-challenger.agent.md](https://github.com/jonathan-vella/azure-agentic-infraops/blob/main/.github/agents/10-challenger.agent.md)
 
@@ -115,9 +115,9 @@ Auto-invoked by the Conductor after Steps 1, 2, and 4.
 The conversational interface for GitHub Copilot in VS Code. Accessed via `Ctrl+Shift+I`. Supports
 custom agents via the agent picker dropdown (`Ctrl+Shift+A`).
 
-### Conductor
+### Orchestrator
 
-See [InfraOps Conductor](#infraops-conductor).
+See [Orchestrator](#orchestrator).
 
 ### CLI (Command-Line Interface)
 
@@ -127,11 +127,8 @@ and PowerShell (`pwsh`).
 
 ### Content Tabs
 
-A MkDocs Material feature that renders tabbed content blocks using `=== "Tab Name"` syntax.
-Used in this documentation to show Bicep and Terraform examples side-by-side without
-duplicating page structure.
-
-🔗 **External**: [MkDocs Material Content Tabs](https://squidfunk.github.io/mkdocs-material/reference/content-tabs/)
+A documentation feature that renders tabbed content blocks, used to show Bicep and
+Terraform examples side-by-side without duplicating page structure.
 
 ### Context Shredding
 
@@ -162,9 +159,10 @@ DAG in `workflow-graph.json`.
 ### Design Agent
 
 Step 3 agent that generates architecture diagrams and Architecture Decision Records (ADRs).
-Optional step in the workflow. Uses `azure-diagrams` and `azure-adr` skills.
+Optional step in the workflow. Uses `drawio` and `python-diagrams` skills
+(architecture diagrams and charts) and `azure-adr` skill.
 
-📁 **Output**: `agent-output/{project}/03-des-*.{py,png,md}`
+📁 **Output**: `agent-output/{project}/03-des-*.{drawio,py,png,md}`
 
 ### Dev Container
 
@@ -184,15 +182,33 @@ configuration.
 A visual diagram showing how data entities relate to each other. Used in the Design step
 (Step 3) to model data architectures.
 
+## E
+
+### E2E Benchmark
+
+The 8-dimension scoring model used to evaluate Ralph Loop runs. Dimensions: artifact completeness,
+structural compliance, code quality, review thoroughness, WAF coverage, cost accuracy, session
+state integrity, and timing performance. Composite score 0–100 with letter grades (A–F).
+
+📁 **Output**: `agent-output/{project}/08-benchmark-report.md`, `08-benchmark-scores.json`
+
+### E2E Orchestrator
+
+Orchestration agent that drives the Ralph Loop. Executes all APEX steps without human
+gates, with pre-validation, self-correction, challenger reviews, and benchmark collection.
+Supports both Bicep and Terraform IaC tracks. Invoked via prompt files, not direct @mention.
+
+📁 **See**: [.github/agents/e2e-orchestrator.agent.md](https://github.com/jonathan-vella/azure-agentic-infraops/blob/main/.github/agents/e2e-orchestrator.agent.md)
+
 ## F
 
 ### Fast Path
 
-An experimental conductor variant (`01-Conductor (Fast Path)`) optimized for simple Azure
+An experimental orchestrator variant (`01-Orchestrator (Fast Path)`) optimized for simple Azure
 projects with 3 or fewer resources, single environment, and no custom policies. Combines
 the Plan and Code steps with a single-pass review for faster delivery.
 
-📁 **See**: [.github/agents/01-conductor-fastpath.agent.md](https://github.com/jonathan-vella/azure-agentic-infraops/blob/main/.github/agents/01-conductor-fastpath.agent.md)
+📁 **See**: [.github/agents/01-orchestrator-fastpath.agent.md](https://github.com/jonathan-vella/azure-agentic-infraops/blob/main/.github/agents/01-orchestrator-fastpath.agent.md)
 
 ## G
 
@@ -222,13 +238,13 @@ and "spoke" VNets contain workloads. Spokes peer with the hub for connectivity.
 
 ## I
 
-### InfraOps Conductor
+### Orchestrator
 
-The master orchestrator agent that coordinates all 8 steps of the infrastructure workflow with
-mandatory human approval gates. Implements the Conductor pattern from VS Code 1.109's agent
+The master orchestrator agent that coordinates all steps of the infrastructure workflow with
+mandatory human approval gates. Implements the Orchestrator pattern from VS Code 1.109's agent
 orchestration features.
 
-📁 **See**: [.github/agents/01-conductor.agent.md](https://github.com/jonathan-vella/azure-agentic-infraops/blob/main/.github/agents/01-conductor.agent.md)
+📁 **See**: [.github/agents/01-orchestrator.agent.md](https://github.com/jonathan-vella/azure-agentic-infraops/blob/main/.github/agents/01-orchestrator.agent.md)
 
 ### IaC (Infrastructure as Code)
 
@@ -259,10 +275,13 @@ troubleshooting and diagnostics (see S05 Troubleshooting scenario).
 
 ### MCP (Model Context Protocol)
 
-Protocol for extending AI assistants with external tools and data sources. The Azure Pricing MCP
-server provides real-time Azure pricing to Copilot.
+Protocol for extending AI assistants with external tools and data sources. This project
+uses MCP servers for GitHub (repo operations), Azure (RBAC-aware resource access),
+Azure Pricing (cost estimation), Terraform Registry (module lookup), and Microsoft
+Learn (official documentation search and code sample discovery).
 
-📁 **See**: [mcp/azure-pricing-mcp/](https://github.com/jonathan-vella/azure-agentic-infraops/tree/main/mcp/azure-pricing-mcp)
+📁 **See**: [mcp/azure-pricing-mcp/](https://github.com/jonathan-vella/azure-agentic-infraops/tree/main/mcp/azure-pricing-mcp),
+[MCP Integration](how-it-works/mcp-integration.md)
 
 ### MJS (ECMAScript Module)
 
@@ -315,12 +334,21 @@ The governance-discovery-subagent queries Azure Policy assignments via REST API.
 ### ROI (Return on Investment)
 
 A financial metric measuring the gain or loss from an investment relative to its cost.
-Used in presenter materials to quantify the value of Agentic InfraOps.
+Used in presenter materials to quantify the value of APEX.
 
 ### RPC (Remote Procedure Call)
 
 A protocol for executing functions on a remote server. MCP servers communicate using
 JSON-RPC, a lightweight RPC protocol encoded in JSON.
+
+### Ralph Loop
+
+An autonomous, self-correcting E2E evaluation workflow based on the
+[RALPH pattern](https://ghuntley.com/ralph/). Runs all APEX pipeline steps without
+human gates, with built-in self-correction, challenger reviews, and benchmark scoring.
+Supports both Bicep and Terraform IaC tracks.
+
+📁 **See**: [E2E Testing documentation](e2e-testing.md)
 
 ## S
 
@@ -364,13 +392,13 @@ Required for supply chain security. S06 SBOM Generator scenario demonstrates SBO
 ### SI Partner (System Integrator Partner)
 
 Microsoft partner organization that implements Azure solutions for customers. Primary audience
-for Agentic InfraOps methodology.
+for APEX methodology.
 
 ### Skill (Copilot)
 
 A reusable knowledge module stored in `.github/skills/` that agents can invoke. Unlike agents,
 skills don't have their own chat persona — they provide domain knowledge that agents use.
-18 skills are organized across conventions, document creation, infrastructure patterns,
+Skills are organized across conventions, document creation, infrastructure patterns,
 workflow automation, and troubleshooting categories.
 
 📁 **See**: [.github/skills/](https://github.com/jonathan-vella/azure-agentic-infraops/tree/main/.github/skills)
@@ -378,9 +406,9 @@ workflow automation, and troubleshooting categories.
 ### Subagent
 
 A specialized validation agent invoked by other agents for specific tasks (lint, what-if/plan,
-review). Nine exist: `challenger-review-subagent`, `cost-estimate-subagent`,
-`governance-discovery-subagent`, `bicep-lint-subagent`, `bicep-review-subagent`,
-`bicep-whatif-subagent`, `terraform-lint-subagent`, `terraform-review-subagent`,
+review). Seven exist: `challenger-review-subagent`, `cost-estimate-subagent`,
+`governance-discovery-subagent`, `bicep-validate-subagent`,
+`bicep-whatif-subagent`, `terraform-validate-subagent`,
 `terraform-plan-subagent`.
 
 📁 **See**: [.github/agents/\_subagents/](https://github.com/jonathan-vella/azure-agentic-infraops/tree/main/.github/agents/_subagents)
@@ -392,7 +420,7 @@ review). Nine exist: `challenger-review-subagent`, `cost-estimate-subagent`,
 Key-value pairs applied to Azure resources for organization, cost tracking, and policy enforcement.
 Baseline tags: Environment, ManagedBy, Project, Owner.
 Governance constraints may require additional tags.
-See `bicep-code-best-practices.instructions.md` or `terraform-code-best-practices.instructions.md`
+See `iac-bicep-best-practices.instructions.md` or `iac-terraform-best-practices.instructions.md`
 for the canonical tag rule.
 
 ### Terraform
@@ -409,7 +437,7 @@ Provider pin: `~> 4.0` (AzureRM). Backend: Azure Storage Account.
 ### TFLint
 
 A pluggable Terraform linter that enforces best practices, naming conventions, and
-resource-specific rules. Used by the `terraform-lint-subagent` during Step 5 validation.
+resource-specific rules. Used by the `terraform-validate-subagent` during Step 5 validation.
 
 🔗 **External**: [TFLint](https://github.com/terraform-linters/tflint)
 
@@ -469,19 +497,20 @@ WSL 2 installation.
 
 A human-readable data serialisation format used for configuration files. In this project,
 YAML is used in agent frontmatter (`.agent.md`), instruction frontmatter
-(`.instructions.md`), MkDocs configuration (`mkdocs.yml`), and GitHub Actions workflows.
+(`.instructions.md`), Astro configuration (`site/astro.config.mjs`), and GitHub Actions workflows.
 
 🔗 **External**: [YAML Specification](https://yaml.org/)
 
 ## Numbers & Symbols
 
-### 7-Step Agentic Workflow
+### Multi-Step Agentic Workflow
 
-The core Agentic InfraOps workflow: `requirements` → `architect` → Design Artifacts →
-IaC Plan → IaC Code → Deploy → Documentation. Steps 1-3 and 7 are shared;
-steps 4-6 diverge into **Bicep track** (`bicep-planner` → `bicep-codegen` → `bicep-deploy`)
-or **Terraform track** (`terraform-planner` → `terraform-codegen` → `terraform-deploy`).
-Each step produces artifacts in `agent-output/`.
+The core APEX workflow: `requirements` → `architect` → Design Artifacts →
+Governance → IaC Plan → IaC Code → Deploy → Documentation. Step 3.5 (Governance)
+runs between Design and IaC Plan. Steps 1–3 and 7 are shared; steps 4–6 diverge into
+**Bicep track** (`iac-planner` → `bicep-codegen` → `bicep-deploy`) or **Terraform track**
+(`iac-planner` → `terraform-codegen` → `terraform-deploy`). Each step produces
+artifacts in `agent-output/`.
 
 📁 **See**: [Workflow Guide](workflow.md)
 

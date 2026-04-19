@@ -11,6 +11,7 @@ Thank you to everyone who has contributed to making this project better!
 - **Jonathan Vella** ([@jonathan-vella](https://github.com/jonathan-vella)) - Project Lead
 - **Storm Gibson** ([@StormyDevil](https://github.com/StormyDevil)) - Contributor
 - **Fares Zekri** ([@farez_microsoft](https://github.com/farez_microsoft)) - Contributor
+
 <div align="right"><a href="#top"><b>⬆️ Back to Top</b></a></div>
 
 ## Azure Pricing MCP Server Contributors
@@ -36,6 +37,7 @@ real-time Azure pricing information to AI assistants.
 - [Azure Retail Prices API][azure-pricing] - Pricing data source
 
 [azure-pricing]: https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices
+
 <div align="right"><a href="#top"><b>⬆️ Back to Top</b></a></div>
 
 ## Azure Diagrams Skill Contributors
@@ -50,11 +52,30 @@ diagramming capabilities for architecture documentation.
 ### Source Repository
 
 - [azure-diagrams-skill](https://github.com/cmb211087/azure-diagrams-skill) - Original skill implementation
+
+<div align="right"><a href="#top"><b>⬆️ Back to Top</b></a></div>
+
+<div align="right"><a href="#top"><b>⬆️ Back to Top</b></a></div>
+
+## Draw.io MCP Server Contributors
+
+The [Draw.io MCP Server](mcp/drawio-mcp-server/) provides Azure architecture diagram generation
+with 700+ built-in Azure icons, batch operations, and transactional workflow support.
+
+### Original Author
+
+- **Simon Kurtz** ([@simonkurtz-MSFT](https://github.com/simonkurtz-MSFT)) - Created the Draw.io MCP Server
+
+### Source Repository
+
+- [drawio-mcp-server](https://github.com/simonkurtz-MSFT/drawio-mcp-server) - Original MCP server implementation
+
 <div align="right"><a href="#top"><b>⬆️ Back to Top</b></a></div>
 
 ## How to Contribute
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get involved.
+
 <div align="right"><a href="#top"><b>⬆️ Back to Top</b></a></div>
 
 ## Recognition

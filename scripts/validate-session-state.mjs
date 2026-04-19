@@ -47,7 +47,7 @@ const EXPECTED_STEP_NAMES = {
   1: "Requirements",
   2: "Architecture",
   3: "Design",
-  3.5: "Governance",
+  "3_5": "Governance",
   4: "IaC Plan",
   5: "IaC Code",
   6: "Deploy",
@@ -100,7 +100,11 @@ function validateStateFile(filePath, isTemplate) {
     }
   }
 
-  if (state.schema_version !== "1.0" && state.schema_version !== "2.0") {
+  if (
+    state.schema_version !== "1.0" &&
+    state.schema_version !== "2.0" &&
+    state.schema_version !== "3.0"
+  ) {
     error(label, `Unsupported schema_version: ${state.schema_version}`);
   }
 
@@ -123,43 +127,19 @@ function validateStateFile(filePath, isTemplate) {
     error(label, "open_findings must be an array");
   }
 
-  // v2.0 lock field validation (optional, backwards-compatible)
-  if (state.lock !== undefined) {
-    if (typeof state.lock !== "object" || state.lock === null) {
-      error(label, "lock must be an object");
-    } else {
-      if (state.lock.heartbeat !== undefined && state.lock.heartbeat !== null) {
-        const d = new Date(state.lock.heartbeat);
-        if (isNaN(d.getTime())) {
-          error(
-            label,
-            `lock.heartbeat is not a valid ISO date: "${state.lock.heartbeat}"`,
-          );
-        }
-      }
-      if (
-        state.lock.attempt_token !== undefined &&
-        state.lock.attempt_token !== null
-      ) {
-        const uuidRe =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRe.test(state.lock.attempt_token)) {
-          error(
-            label,
-            `lock.attempt_token is not a valid UUID: "${state.lock.attempt_token}"`,
-          );
-        }
-      }
-    }
+  // v2.0 lock fields are deprecated in v3.0 — warn if still present
+  if (state.lock !== undefined && state.schema_version === "3.0") {
+    warn(label, "v3.0 schema should not have lock object — consider migrating");
   }
 
-  if (state.stale_threshold_ms !== undefined) {
-    if (
-      typeof state.stale_threshold_ms !== "number" ||
-      state.stale_threshold_ms <= 0
-    ) {
-      error(label, "stale_threshold_ms must be a positive number");
-    }
+  if (
+    state.stale_threshold_ms !== undefined &&
+    state.schema_version === "3.0"
+  ) {
+    warn(
+      label,
+      "v3.0 schema should not have stale_threshold_ms — consider migrating",
+    );
   }
 
   if (state.decisions) {
@@ -189,7 +169,7 @@ function validateStateFile(filePath, isTemplate) {
       const validStepKeys = [
         "step_1",
         "step_2",
-        "step_3.5",
+        "step_3_5",
         "step_4",
         "step_5",
         "step_6",
@@ -234,6 +214,65 @@ function validateStateFile(filePath, isTemplate) {
           ) {
             error(label, `review_audit.${key}.models_used must be an array`);
           }
+        }
+      }
+    }
+  }
+
+  // Validate optional decision_log (don't break old sessions)
+  if (state.decision_log !== undefined) {
+    if (!Array.isArray(state.decision_log)) {
+      error(label, "decision_log must be an array");
+    } else {
+      const requiredEntryFields = [
+        "id",
+        "step",
+        "agent",
+        "title",
+        "choice",
+        "rationale",
+      ];
+      const idPattern = /^D\d+$/;
+      for (let i = 0; i < state.decision_log.length; i++) {
+        const entry = state.decision_log[i];
+        const prefix = `decision_log[${i}]`;
+        if (typeof entry !== "object" || entry === null) {
+          error(label, `${prefix} must be an object`);
+          continue;
+        }
+        for (const field of requiredEntryFields) {
+          if (!(field in entry)) {
+            error(label, `${prefix}: missing required field "${field}"`);
+          }
+        }
+        if (entry.id !== undefined && !idPattern.test(entry.id)) {
+          error(
+            label,
+            `${prefix}: id must match pattern D001, D002, etc. Got: "${entry.id}"`,
+          );
+        }
+        if (
+          entry.step !== undefined &&
+          (typeof entry.step !== "number" || entry.step < 1 || entry.step > 7)
+        ) {
+          error(label, `${prefix}: step must be a number between 1 and 7`);
+        }
+        if (entry.timestamp !== undefined && entry.timestamp !== null) {
+          const d = new Date(entry.timestamp);
+          if (isNaN(d.getTime())) {
+            error(
+              label,
+              `${prefix}: timestamp is not a valid ISO date: "${entry.timestamp}"`,
+            );
+          }
+        } else {
+          warn(label, `${prefix}: missing timestamp`);
+        }
+        if (
+          entry.alternatives !== undefined &&
+          !Array.isArray(entry.alternatives)
+        ) {
+          error(label, `${prefix}: alternatives must be an array of strings`);
         }
       }
     }

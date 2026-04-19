@@ -1,17 +1,28 @@
 ---
 name: governance-discovery-subagent
 description: Azure governance discovery subagent. Queries Azure Policy assignments via REST API (including management group-inherited policies), classifies policy effects, and returns structured governance constraints. Isolates heavy REST API work from the parent IaC plan agents (Bicep and Terraform) context.
-model: "GPT-5.3-Codex (copilot)"
+model: ["GPT-5.4"]
 user-invocable: false
 disable-model-invocation: false
 agents: []
 tools:
   [
+    vscode,
     execute,
     read,
+    agent,
+    browser,
+    edit,
     search,
     web,
     "azure-mcp/*",
+    "microsoft-learn/*",
+    todo,
+    ms-azuretools.vscode-azure-github-copilot/azure_recommend_custom_modes,
+    ms-azuretools.vscode-azure-github-copilot/azure_query_azure_resource_graph,
+    ms-azuretools.vscode-azure-github-copilot/azure_get_auth_context,
+    ms-azuretools.vscode-azure-github-copilot/azure_set_auth_context,
+    ms-azuretools.vscode-azure-github-copilot/azure_get_dotnet_template_tags,
     ms-azuretools.vscode-azureresourcegroups/azureActivityLog,
   ]
 ---
@@ -49,12 +60,21 @@ az account get-access-token --resource https://management.azure.com/ --output no
 
 If this fails, instruct user to run `az login --use-device-code`.
 
+<empty_result_recovery>
+If discovery returns 0 policy assignments, this is a valid result — not an error.
+Return COMPLETE status with zero counts. Do not retry or fabricate policies.
+If the REST API returns an authentication error, return FAILED status with clear instructions.
+If the API returns partial data (timeout, pagination), return PARTIAL status and include
+what was retrieved with a note about incomplete data.
+</empty_result_recovery>
+
 ## Policy Discovery Commands
 
 ### Preferred: Batch Script Approach
 
-For efficiency, run a single batch query to fetch all assignments and expand
-policy definitions in one pass. Use this Python one-liner pattern:
+For efficiency, always prefer the batch script approach over step-by-step REST calls.
+The batch script collapses 20+ sequential REST calls into a single execution,
+caching shared policy definitions.
 
 ```bash
 python3 -c "
@@ -113,6 +133,23 @@ conditions:properties.policyRule.if}" \
   -o json
 ```
 
+### Step 2.5: Expand Initiative (Policy Set) Members
+
+For each assignment where `policyDefinitionId` contains `/policySetDefinitions/`:
+
+```bash
+az rest --method GET \
+  --url "https://management.azure.com{policySetDefinitionId}?api-version=2021-06-01" \
+  --query "{members:properties.policyDefinitions[].{definitionId:policyDefinitionId, parameters:parameters}}" \
+  -o json
+```
+
+For each member with `Deny` or `DeployIfNotExists` effect, read the individual
+definition and extract `policyRule.then.details.existenceCondition`. Include
+these expanded constraints in the structured output under a new "Initiative
+Members" section. This prevents governance planning from missing real blockers
+hidden inside umbrella initiatives.
+
 ### Step 3: Count Validation
 
 Verify the REST API count matches Azure Portal (Policy > Assignments) total.
@@ -165,26 +202,37 @@ Recommendation: {proceed|adapt plan|escalate}
 
 ## JSON Constraint Schema (04-governance-constraints.json)
 
-For every Deny/Modify policy that affects specific resource properties, include
-BOTH `bicepPropertyPath` AND `azurePropertyPath` in the JSON output:
+The JSON file MUST use an envelope object (NOT a bare array) with these top-level fields:
 
 ```json
 {
+  "discovery_status": "COMPLETE",
+  "project": "{project-name}",
+  "subscription": { "displayName": "...", "subscriptionId": "...", "tenantId": "..." },
+  "discovery_timestamp": "2026-01-01T00:00:00Z",
+  "discovery_summary": { "assignment_total": 0, "subscription_scope_count": 0, "management_group_inherited_count": 0 },
+  "assignment_inventory": [ { "displayName": "...", "scope": "...", "assignmentType": "subscription" } ],
   "policies": [
     {
-      "name": "Require TLS 1.2 for Storage",
+      "displayName": "Require TLS 1.2 for Storage",
+      "policyDefinitionId": "/providers/...",
       "effect": "Deny",
-      "scope": "Management Group",
+      "scope": "/providers/Microsoft.Management/managementGroups/...",
+      "classification": "blocker",
+      "affectedResourceTypes": ["Microsoft.Storage/storageAccounts"],
       "bicepPropertyPath": "storageAccounts::properties.minimumTlsVersion",
       "azurePropertyPath": "storageAccount.properties.minimumTlsVersion",
       "requiredValue": "TLS1_2",
-      "status": "compliant"
+      "appliesToArchitecture": true
     }
   ]
 }
 ```
 
-Field definitions:
+**Mandatory top-level fields**: `discovery_status` (COMPLETE/PARTIAL/FAILED) and `policies`
+array. Step 4 (IaC Planner) and E2E orchestrator validate these at startup and STOP if missing.
+
+**Field definitions**:
 
 - **`bicepPropertyPath`**: Bicep resource type (lowerCamelCase) `::` ARM property path.
   Format: `{bicepResourceType}::{arm.property.path}`
@@ -197,9 +245,13 @@ Field definitions:
 
 - **`requiredValue`**: The exact value required by the Deny policy.
 
-Both fields MUST be populated for every Deny/Modify policy. If a policy does not
-target a specific resource property (e.g., tag enforcement, location restriction),
-omit both fields.
+Both fields MUST be populated for every Deny/Modify policy. For tag-enforcement
+policies that target tags rather than resource properties, use:
+
+- `bicepPropertyPath`: `"resourceGroups::tags"`
+- `azurePropertyPath`: `"resourceGroup.tags"`
+- Add a `requiredTags` array with the exact tag key names
+- Add `"pathSemantics": "tag-policy-non-property"` to signal downstream consumers
 
 ## Resource-Specific Filtering
 

@@ -7,9 +7,9 @@
  *
  * Checks:
  * 1. Bicep Code Generator references 04-governance-constraints
- * 2. bicep-review-subagent has Governance Compliance checklist
- * 3. Bicep Planner references JSON output schema completeness
- * 4. bicep-policy-compliance.instructions.md exists with correct applyTo
+ * 2. bicep-validate-subagent has Governance Compliance checklist
+ * 3. IaC Planner references JSON output schema completeness
+ * 4. iac-bicep-best-practices.instructions.md exists with correct applyTo
  *
  * @example
  * node scripts/validate-governance-refs.mjs
@@ -17,21 +17,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { Reporter } from "./_lib/reporter.mjs";
 
 const ROOT = process.cwd();
-
-let errors = 0;
-let checks = 0;
-
-function check(description, condition) {
-  checks++;
-  if (condition) {
-    console.log(`  ✅ ${description}`);
-  } else {
-    console.error(`  ❌ ${description}`);
-    errors++;
-  }
-}
+const r = new Reporter("Governance Reference Validation");
 
 const _fileCache = new Map();
 
@@ -52,6 +41,10 @@ function fileExists(filePath) {
 
 console.log("\n🔍 Governance Reference Validation\n");
 
+function check(description, condition) {
+  r.check(description, condition);
+}
+
 // 1. Bicep Code Generator references governance constraints
 console.log("📄 06b-bicep-codegen.agent.md");
 const codeGenPath = ".github/agents/06b-bicep-codegen.agent.md";
@@ -64,8 +57,8 @@ check(
   fileContains(codeGenPath, "Phase 1.5"),
 );
 check(
-  "References bicep-policy-compliance.instructions.md",
-  fileContains(codeGenPath, "bicep-policy-compliance.instructions.md"),
+  "References iac-bicep-best-practices.instructions.md",
+  fileContains(codeGenPath, "iac-bicep-best-practices.instructions.md"),
 );
 check(
   "DO list includes governance constraint parsing",
@@ -82,9 +75,9 @@ check(
   fileContains(codeGenPath, "Skip governance compliance mapping"),
 );
 
-// 2. bicep-review-subagent has Governance Compliance section
-console.log("\n📄 bicep-review-subagent.agent.md");
-const reviewPath = ".github/agents/_subagents/bicep-review-subagent.agent.md";
+// 2. bicep-validate-subagent has Governance Compliance section
+console.log("\n📄 bicep-validate-subagent.agent.md");
+const reviewPath = ".github/agents/_subagents/bicep-validate-subagent.agent.md";
 check(
   "Has Governance Compliance section",
   fileContains(reviewPath, "### 7. Governance Compliance"),
@@ -103,9 +96,9 @@ check(
 );
 check("Checks SKU restrictions", fileContains(reviewPath, "SKU restriction"));
 
-// 3. Bicep Planner consumes governance JSON as prerequisite
-console.log("\n📄 05b-bicep-planner.agent.md");
-const plannerPath = ".github/agents/05b-bicep-planner.agent.md";
+// 3. IaC Planner consumes governance JSON as prerequisite
+console.log("\n📄 05-iac-planner.agent.md");
+const plannerPath = ".github/agents/05-iac-planner.agent.md";
 check(
   "References governance constraints as prerequisite",
   fileContains(plannerPath, "04-governance-constraints"),
@@ -116,26 +109,22 @@ check(
     fileContains(plannerPath, "policy-effect-decision-tree"),
 );
 
-// 4. bicep-policy-compliance.instructions.md exists and is valid
-console.log("\n📄 bicep-policy-compliance.instructions.md");
-const policyInstrPath =
-  ".github/instructions/bicep-policy-compliance.instructions.md";
-check("File exists", fileExists(policyInstrPath));
+// 4. iac-bicep-best-practices.instructions.md exists and is valid
+console.log("\n📄 iac-bicep-best-practices.instructions.md");
+const bicepInstrPath =
+  ".github/instructions/iac-bicep-best-practices.instructions.md";
+check("File exists", fileExists(bicepInstrPath));
 check(
   "Has correct applyTo scope including *.bicep",
-  fileContains(policyInstrPath, "**/*.bicep"),
-);
-check(
-  "applyTo no longer includes agent.md files",
-  !fileContains(policyInstrPath, "**/*.agent.md"),
+  fileContains(bicepInstrPath, "**/*.bicep"),
 );
 check(
   'States "Azure Policy always wins"',
-  fileContains(policyInstrPath, "Azure Policy always wins"),
+  fileContains(bicepInstrPath, "Azure Policy always wins"),
 );
 check(
-  "References 04-governance-constraints.json",
-  fileContains(policyInstrPath, "04-governance-constraints.json"),
+  "References iac-policy-compliance",
+  fileContains(bicepInstrPath, "iac-policy-compliance"),
 );
 
 // 5. Governance discovery instructions include downstream enforcement
@@ -162,22 +151,22 @@ check(
   fileContains(govDiscPath, "## Downstream Enforcement"),
 );
 
-// 6. Terraform Planner uses azurePropertyPath (not bicepPropertyPath)
-console.log("\n📄 05t-terraform-planner.agent.md");
-const tfPlannerPath = ".github/agents/05t-terraform-planner.agent.md";
+// 6. IaC Planner uses azurePropertyPath (not bicepPropertyPath) for Terraform
+console.log("\n📄 05-iac-planner.agent.md (Terraform property mapping)");
+const iacPlannerPath = ".github/agents/05-iac-planner.agent.md";
 check(
   "Uses azurePropertyPath (not bicepPropertyPath) for property mapping",
-  fileContains(tfPlannerPath, "azurePropertyPath") &&
-    fileContains(tfPlannerPath, "always use `azurePropertyPath`"),
+  fileContains(iacPlannerPath, "azurePropertyPath") &&
+    fileContains(iacPlannerPath, "always use `azurePropertyPath`"),
 );
 check(
   "Governance constraints are a prerequisite",
-  fileContains(tfPlannerPath, "REQUIRED") &&
-    fileContains(tfPlannerPath, "04-governance-constraints"),
+  fileContains(iacPlannerPath, "REQUIRED") &&
+    fileContains(iacPlannerPath, "04-governance-constraints"),
 );
 check(
   "References 04-governance-constraints.json",
-  fileContains(tfPlannerPath, "04-governance-constraints.json"),
+  fileContains(iacPlannerPath, "04-governance-constraints.json"),
 );
 
 // 7. Terraform Code Generator governance compliance
@@ -198,9 +187,9 @@ check(
 );
 
 // 8. Terraform review subagent has governance compliance section
-console.log("\n📄 terraform-review-subagent.agent.md");
+console.log("\n📄 terraform-validate-subagent.agent.md");
 const tfReviewPath =
-  ".github/agents/_subagents/terraform-review-subagent.agent.md";
+  ".github/agents/_subagents/terraform-validate-subagent.agent.md";
 check(
   "Has Governance Compliance section",
   fileContains(tfReviewPath, "### 7. Governance Compliance"),
@@ -210,10 +199,10 @@ check(
   fileContains(tfReviewPath, "azurePropertyPath"),
 );
 
-// 9. terraform-policy-compliance.instructions.md exists and is valid
-console.log("\n📄 terraform-policy-compliance.instructions.md");
+// 9. iac-terraform-best-practices.instructions.md covers Terraform
+console.log("\n📄 iac-terraform-best-practices.instructions.md");
 const tfPolicyInstrPath =
-  ".github/instructions/terraform-policy-compliance.instructions.md";
+  ".github/instructions/iac-terraform-best-practices.instructions.md";
 check("File exists", fileExists(tfPolicyInstrPath));
 check(
   "Has correct applyTo scope including *.tf",
@@ -224,8 +213,8 @@ check(
   fileContains(tfPolicyInstrPath, "Azure Policy always wins"),
 );
 check(
-  "References 04-governance-constraints.json",
-  fileContains(tfPolicyInstrPath, "04-governance-constraints.json"),
+  "References iac-policy-compliance",
+  fileContains(tfPolicyInstrPath, "iac-policy-compliance"),
 );
 
 // 10. Governance discovery subagent produces BOTH bicepPropertyPath AND azurePropertyPath
@@ -242,15 +231,8 @@ check(
 );
 
 // Summary
-console.log(`\n${"─".repeat(50)}`);
-console.log(
-  `Checks: ${checks} | Passed: ${checks - errors} | Failed: ${errors}`,
+r.summary("Governance guardrails");
+r.exitOnError(
+  "All governance guardrails intact",
+  `${r.errors} governance guardrail(s) missing — see failures above`,
 );
-if (errors > 0) {
-  console.error(
-    `\n❌ ${errors} governance guardrail(s) missing — see failures above`,
-  );
-  process.exit(1);
-} else {
-  console.log("\n✅ All governance guardrails intact");
-}

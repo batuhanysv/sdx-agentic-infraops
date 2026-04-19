@@ -1,13 +1,21 @@
 ---
 description: "Perform a WAF assessment and generate cost estimates based on completed requirements."
 agent: "03-Architect"
-model: "Claude Opus 4.6"
 ---
 
 # Step 2 — Architecture Assessment
 
-Resume the 7-step workflow at Step 2. Evaluate requirements against all 5 WAF pillars and produce
+Resume the multi-step workflow at Step 2. Evaluate requirements against all 5 WAF pillars and produce
 cost estimates.
+
+## Prerequisites
+
+- `agent-output/{project}/01-requirements.md` must exist (Step 1 complete)
+- `agent-output/{project}/00-session-state.json` with `steps.1.status = "complete"`
+
+## Variables
+
+- `{project}`: project folder name under `agent-output/`
 
 ## Instructions
 

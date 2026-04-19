@@ -1,6 +1,6 @@
 ---
 description: Trigger conditions for updating documentation when code changes. Defines WHEN docs need updating — not HOW to write them (see docs.instructions.md and markdown.instructions.md for formatting).
-applyTo: "**/*.{js,mjs,cjs,ts,tsx,jsx,py,ps1,sh,bicep,tf}"
+applyTo: "**/*.agent.md, **/.github/skills/**/SKILL.md, **/scripts/*.mjs"
 ---
 
 # Update Documentation on Code Change
@@ -44,20 +44,6 @@ Update when:
 - Project structure changes (update tree diagram)
 - New capabilities are introduced (update feature list)
 
-### [docs/README.md](../../docs/README.md)
-
-Update when:
-
-- Agent or skill inventory changes (update tables)
-- New documentation files are added (update quick links)
-
-### [docs/prompt-guide/README.md](../../docs/prompt-guide/README.md)
-
-Update when:
-
-- Agents or skills are added, renamed, or removed
-- Agent capabilities change significantly
-
 ### [CHANGELOG.md](../../CHANGELOG.md)
 
 Update when:
@@ -65,6 +51,14 @@ Update when:
 - Any user-facing change is made (follow Keep a Changelog format)
 - Use conventional commit type to determine section (Added, Changed,
   Fixed, Removed, Deprecated, Security)
+
+### Site docs (`site/src/content/docs/`)
+
+Update when:
+
+- Agents or skills are added, renamed, or removed
+- Agent capabilities change significantly
+- New documentation files are added
 
 ### docs-writer References
 

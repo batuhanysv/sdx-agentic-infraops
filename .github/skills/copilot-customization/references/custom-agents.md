@@ -1,4 +1,5 @@
 <!-- ref:custom-agents-v1 -->
+
 # Custom Agents Reference
 
 > Source: https://code.visualstudio.com/docs/copilot/customization/custom-agents
@@ -140,18 +141,18 @@ VS Code maps Claude tool names to VS Code equivalents.
 
 ## This Repo's Examples
 
-| File                                             | Name                | Purpose                                 |
-| ------------------------------------------------ | ------------------- | --------------------------------------- |
-| `01-conductor.agent.md`                          | 01-Conductor        | Master orchestrator for 7-step workflow |
-| `06b-bicep-codegen.agent.md`                     | 06b-Bicep CodeGen   | Bicep IaC code generation               |
-| `09-diagnose.agent.md`                           | 09-Diagnose         | Azure resource diagnostics              |
-| `_subagents/challenger-review-subagent.agent.md` | 10-Challenger (sub) | Adversarial review                      |
-| `_subagents/cost-estimate-subagent.agent.md`     | Cost Estimate (sub) | Azure pricing queries                   |
+| File                                             | Name                | Purpose                                     |
+| ------------------------------------------------ | ------------------- | ------------------------------------------- |
+| `01-orchestrator.agent.md`                       | 01-Orchestrator     | Master orchestrator for multi-step workflow |
+| `06b-bicep-codegen.agent.md`                     | 06b-Bicep CodeGen   | Bicep IaC code generation                   |
+| `09-diagnose.agent.md`                           | 09-Diagnose         | Azure resource diagnostics                  |
+| `_subagents/challenger-review-subagent.agent.md` | 10-Challenger (sub) | Adversarial review                          |
+| `_subagents/cost-estimate-subagent.agent.md`     | Cost Estimate (sub) | Azure pricing queries                       |
 
 **Convention in this repo**: Filenames use kebab-case; `name` frontmatter uses display-friendly casing.
 Subagents live in `_subagents/` and typically set `user-invocable: false`.
 
-Total: 15 top-level agents + 9 subagents.
+See `.github/agents/` for the full roster and `.github/count-manifest.json` for current counts.
 
 ## Common Mistakes
 
@@ -161,13 +162,13 @@ Total: 15 top-level agents + 9 subagents.
 | Using deprecated `infer` field                        | Replace with `user-invocable` and `disable-model-invocation` |
 | Tool not available at runtime                         | Tools silently ignored; verify tool names                    |
 | YAML block scalar for `description`                   | Use inline string: `description: "..."`                      |
-| Agent body > 300 lines                                | Move content to skills or instruction files                  |
+| Agent body > 350 lines                                | Move content to skills or instruction files                  |
 | Confusing filename with display name                  | Filename = kebab-case; `name` = display casing               |
 
 ## Enforcement Rules
 
 For THIS REPO's conventions on writing agent files, see:
-`.github/instructions/agent-definitions.instructions.md` (auto-loaded for `**/*.agent.md`).
+`.github/instructions/agent-authoring.instructions.md` (auto-loaded for `**/*.agent.md`).
 
 ## Verify Freshness
 

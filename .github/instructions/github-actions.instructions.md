@@ -14,7 +14,7 @@ For general GitHub Actions best practices, rely on
 ### Runner and Node.js
 
 - **Runner**: `ubuntu-latest` for all jobs
-- **Node.js**: Version `22` with `npm` caching
+- **Node.js**: Version `24` with `npm` caching
 - **Dependencies**: `npm ci` (not `npm install`)
 
 ### Permissions
@@ -33,20 +33,22 @@ For general GitHub Actions best practices, rely on
 
 ### Action Versions
 
-- Pin to **major version tags** (e.g., `@v4`), not `@main` or `@latest`
+- Pin to **major version tags** (e.g., `@v6`), not `@main` or `@latest`
 - Use current versions:
 
-| Action                      | Version |
-| --------------------------- | ------- |
-| `actions/checkout`          | `@v4`   |
-| `actions/setup-node`        | `@v4`   |
-| `actions/upload-artifact`   | `@v4`   |
-| `actions/download-artifact` | `@v4`   |
-| `actions/cache`             | `@v4`   |
+| Action                              | Version |
+| ----------------------------------- | ------- |
+| `actions/checkout`                  | `@v6`   |
+| `actions/setup-node`                | `@v6`   |
+| `actions/upload-artifact`           | `@v4`   |
+| `actions/download-artifact`         | `@v4`   |
+| `actions/cache`                     | `@v4`   |
+| `actions/github-script`             | `@v8`   |
+| `peter-evans/create-pull-request`   | `@v8`   |
 
 ### Naming and Structure
 
-- **Workflow file**: Descriptive kebab-case (e.g., `docs-freshness.yml`, `agent-validation.yml`)
+- **Workflow file**: Descriptive kebab-case (e.g., `ci.yml`, `weekly-maintenance.yml`)
 - **Workflow `name`**: Human-readable title
 - **Job `name`**: Clear, concise label
 - **Step `name`**: Descriptive action (e.g., "Validate agent frontmatter")
@@ -64,16 +66,14 @@ concurrency:
 
 ## Existing Workflows
 
-| Workflow                        | Purpose                               | Trigger                   |
-| ------------------------------- | ------------------------------------- | ------------------------- |
-| `lint.yml`                      | Markdown lint + code quality          | PR + push to main         |
-| `agent-validation.yml`          | Agent/skill/VS Code config validation | Changes to agents/skills  |
-| `policy-compliance-check.yml`   | Governance guardrail validation       | Changes to agents/skills  |
-| `link-check.yml`                | Broken link detection in docs/        | Changes to docs/ + weekly |
-| `docs.yml`                      | MkDocs site deployment to Pages       | Push to main (docs/)      |
-| `docs-freshness.yml`            | Doc count/reference drift detection   | Weekly + manual dispatch  |
-| `avm-version-check.yml`         | Azure Verified Module version checks  | Weekly + manual dispatch  |
-| `azure-deprecation-tracker.yml` | Azure deprecation monitoring          | Weekly + manual dispatch  |
+| Workflow                        | Purpose                                           | Trigger                     |
+| ------------------------------- | ------------------------------------------------- | --------------------------- |
+| `ci.yml`                        | Required PR check: lint + all Node.js validators  | PR + push to main/feature   |
+| `link-check.yml`                | Broken link detection in site docs                | Changes to site/ + weekly   |
+| `docs.yml`                      | Astro Starlight site deployment to Pages          | Push to main (site/)        |
+| `weekly-maintenance.yml`        | AVM version audit + docs freshness checks         | Weekly (Mon 07:00) + manual |
+| `azure-deprecation-tracker.yml` | Azure deprecation monitoring                      | Weekly (Mon 06:00) + manual |
+| `excalidraw-svg-export.yml`     | REMOVED — Draw.io is now the default diagram tool | —                           |
 
 ## Validation Scripts
 
@@ -81,9 +81,9 @@ Workflows run these project validators:
 
 | Script                            | Purpose                           |
 | --------------------------------- | --------------------------------- |
-| `validate-artifact-templates.mjs` | Artifact H2 heading compliance    |
-| `validate-agent-frontmatter.mjs`  | Agent YAML frontmatter validation |
-| `validate-skills-format.mjs`      | Skill format validation           |
+| `validate-artifacts.mjs`          | Artifact H2 heading compliance    |
+| `validate-agents.mjs`             | Agent YAML frontmatter validation |
+| `validate-skills.mjs`             | Skill format validation           |
 | `validate-no-deprecated-refs.mjs` | Deprecated reference detection    |
 | `validate-vscode-config.mjs`      | VS Code configuration validation  |
 | `check-docs-freshness.mjs`        | Documentation freshness checks    |
@@ -99,7 +99,7 @@ Workflows run these project validators:
 
 | Anti-Pattern                    | Solution                                   |
 | ------------------------------- | ------------------------------------------ |
-| Pinning to `@main` or `@latest` | Use `@v4` major version tags               |
+| Pinning to `@main` or `@latest` | Use `@v6` major version tags               |
 | `npm install` in CI             | Use `npm ci` for deterministic installs    |
 | Missing `permissions` block     | Always declare least-privilege permissions |
 | Broad triggers (no path filter) | Scope with `paths:` to relevant files      |

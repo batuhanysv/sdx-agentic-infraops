@@ -38,6 +38,12 @@ Deep-dive content lives in `references/` — load on demand.
 | `Project`     | Yes      | Project identifier       |
 | `Owner`       | Yes      | Team or individual name  |
 
+> **Tag Casing Rule**: Use PascalCase exactly as shown above (`Environment`,
+> `ManagedBy`, `Project`, `Owner`). Never emit both `owner` and `Owner` or
+> `environment` and `Environment` in the same template — Azure Policy treats
+> case-variant tag keys as ambiguous evaluation paths
+> (`AmbiguousPolicyEvaluationPaths` error).
+
 ### Unique Suffix Pattern
 
 Generate ONCE, pass to ALL modules:
@@ -58,6 +64,21 @@ var uniqueSuffix = uniqueString(resourceGroup().id)
 
 For AVM pitfalls and deprecation patterns, read
 `references/security-baseline-full.md`.
+
+### Deprecated Services (Do NOT Recommend for Greenfield)
+
+| Deprecated Service     | Replacement                      | Since      | Notes                         |
+| ---------------------- | -------------------------------- | ---------- | ----------------------------- |
+| Azure AD B2C           | Microsoft Entra External ID      | May 2025   | Not available for new tenants |
+| Redis Enterprise E50   | Azure Managed Redis (Enterprise) | March 2027 | Plan migration before EOL     |
+| CDN WAF (classic)      | Front Door Standard/Premium WAF  | 2025       | CDN WAF creation blocked      |
+| App Gateway v1         | App Gateway v2                   | April 2026 | Classic SKU retiring          |
+| CDN Standard Microsoft | Front Door Standard              | 2027       | Migration required            |
+
+**Rule**: Never recommend deprecated services for greenfield projects.
+Before recommending any service with a multi-year RI commitment, verify
+the service retirement timeline extends beyond the commitment period.
+Check Microsoft Learn deprecation announcements.
 
 ---
 

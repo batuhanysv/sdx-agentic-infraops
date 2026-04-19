@@ -55,9 +55,9 @@ Python diagrams (`.png`/`.svg`) and embed with Markdown images.
 ### Good Example
 
 ```markdown
-![Design Architecture](./03-des-diagram.png)
+![Design Architecture](./03-des-diagram.drawio.svg)
 
-Source: `03-des-diagram.py`
+Source: `03-des-diagram.drawio`
 ```
 
 ### Mermaid Usage
@@ -139,7 +139,7 @@ Prerequisites:
 ### Good Example
 
 ```markdown
-See the [getting started guide](../../docs/quickstart.md) for setup.
+See the [getting started guide](../../getting-started/quickstart/) for setup.
 Refer to [Azure Bicep docs](https://learn.microsoft.com/azure/
 azure-resource-manager/bicep/) for syntax details.
 ```
@@ -147,7 +147,7 @@ azure-resource-manager/bicep/) for syntax details.
 ### Bad Example
 
 ```markdown
-Click [here](../../docs/quickstart.md) for more info.
+Click [here](../../getting-started/quickstart/) for more info.
 ```
 
 ## Front Matter (Optional)

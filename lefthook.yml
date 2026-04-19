@@ -23,14 +23,14 @@ pre-commit:
       stage_fixed: true
 
     link-check:
-      glob: "docs/**/*.md"
+      glob: "site/src/content/docs/**/*.{md,mdx}"
       run: |
-        # Get staged docs markdown files
-        STAGED_DOCS=$(git diff --cached --name-only --diff-filter=ACM | grep '^docs/.*\.md$' || true)
+        # Get staged site docs markdown files
+        STAGED_DOCS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^site/src/content/docs/.*\.(md|mdx)$' || true)
         if [ -n "$STAGED_DOCS" ]; then
           echo "🔗 Checking links in $(echo "$STAGED_DOCS" | wc -l | tr -d ' ') doc file(s)..."
           # Use npx to run from local node_modules (avoids Node.js 24 global install bug)
-          echo "$STAGED_DOCS" | xargs -I {} npx markdown-link-check {} --config .markdown-link-check.json --quiet
+          echo "$STAGED_DOCS" | xargs -I {} npx markdown-link-check {} --config .markdown-link-check-site.json --quiet
         else
           echo "ℹ️  No docs to check links"
         fi
@@ -41,7 +41,7 @@ pre-commit:
         STAGED_SYNC=$(git diff --cached --name-only --diff-filter=ACM | grep -E '(SKILL\.md|azure-artifacts|validate-artifact-templates)' || true)
         if [ -n "$STAGED_SYNC" ]; then
           echo "🔄 Checking H2 heading sync across sources..."
-          npm run lint:h2-sync
+          npm run validate:artifacts
         else
           echo "ℹ️  No H2-source files to sync-check"
         fi
@@ -60,14 +60,14 @@ pre-commit:
           COUNT=$(echo "$STAGED_ARTIFACTS" | wc -l | tr -d ' ')
           echo "📋 Validating $COUNT artifact(s) against templates..."
           # Run full artifact validation - blocks on any H2 mismatch
-          if ! npm run lint:artifact-templates; then
+          if ! npm run validate:artifacts; then
             echo ""
             echo "❌ Artifact template validation failed!"
             echo ""
             echo "🔧 To fix:"
             echo "   1. Check .github/instructions/azure-artifacts.instructions.md"
             echo "   2. Use EXACT H2 headings from that file"
-            echo "   3. Run: npm run fix:artifact-h2 <file> --apply"
+            echo "   3. Run: npm run fix:artifacts -- <file> --apply"
             echo "   4. Re-stage and commit"
             echo ""
             exit 1
@@ -79,7 +79,7 @@ pre-commit:
         ❌ Artifact H2 structure validation failed!
 
         📚 Reference: .github/instructions/azure-artifacts.instructions.md
-        🔧 Auto-fix: npm run fix:artifact-h2 <file> --apply
+        🔧 Auto-fix: npm run fix:artifacts -- <file> --apply
 
     agent-frontmatter:
       glob: "**/*.agent.md"
@@ -89,7 +89,7 @@ pre-commit:
         if [ -n "$STAGED_AGENTS" ]; then
           COUNT=$(echo "$STAGED_AGENTS" | wc -l | tr -d ' ')
           echo "🤖 Validating $COUNT agent file(s)..."
-          npm run lint:agent-frontmatter
+          npm run validate:agents
         else
           echo "ℹ️  No agent files to validate"
         fi
@@ -97,16 +97,47 @@ pre-commit:
         ❌ Agent frontmatter validation failed!
 
         🔧 Check YAML syntax in agent definitions
-        📚 Reference: .github/instructions/agent-definitions.instructions.md
+        📚 Reference: .github/instructions/agent-authoring.instructions.md
 
-    instruction-frontmatter:
+    model-alignment:
+      glob: "**/*.agent.md,**/*.prompt.md"
+      run: |
+        STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(agent|prompt)\.md$' || true)
+        if [ -n "$STAGED" ]; then
+          echo "🔗 Checking model-prompt alignment..."
+          npm run validate:agents
+        else
+          echo "ℹ️  No agent/prompt files to check"
+        fi
+      fail_text: |
+        ❌ Model-prompt alignment check failed!
+
+        🔧 Fix prompt model mismatches or stale handoff overrides
+        📚 Reference: .github/instructions/agent-authoring.instructions.md
+
+    agent-checks:
+      glob: "**/*.agent.md"
+      run: |
+        STAGED_AGENTS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.agent\.md$' || true)
+        if [ -n "$STAGED_AGENTS" ]; then
+          echo "📝 Checking agent body size + language density..."
+          npm run validate:agents
+        else
+          echo "ℹ️  No agent files to check"
+        fi
+      fail_text: |
+        ❌ Agent checks failed!
+
+        🔧 Fix body size (>400 lines) or soften absolute language (>5/100 lines)
+
+    instruction-checks:
       glob: "**/*.instructions.md"
       run: |
         STAGED_INSTR=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.instructions\.md$' || true)
         if [ -n "$STAGED_INSTR" ]; then
           COUNT=$(echo "$STAGED_INSTR" | wc -l | tr -d ' ')
           echo "📋 Validating $COUNT instruction file(s)..."
-          npm run lint:instruction-frontmatter
+          npm run validate:instruction-checks
         else
           echo "ℹ️  No instruction files to validate"
         fi
@@ -122,7 +153,7 @@ pre-commit:
         STAGED_REFS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(agent|instructions)\.md$|SKILL\.md$' || true)
         if [ -n "$STAGED_REFS" ]; then
           echo "🔗 Validating instruction cross-references..."
-          npm run validate:instruction-refs
+          npm run validate:instruction-checks
         else
           echo "ℹ️  No agent/skill/instruction files to check references"
         fi
@@ -130,7 +161,7 @@ pre-commit:
         ❌ Instruction reference validation failed!
 
         🔧 A referenced instruction or skill file does not exist.
-        📚 Run: npm run validate:instruction-refs
+        📚 Run: npm run validate:instruction-checks
 
     python-lint:
       glob: "mcp/**/*.py"
@@ -179,6 +210,22 @@ pre-commit:
           echo "ℹ️  No Terraform project to validate"
         fi
 
+    iac-security-baseline:
+      glob: "{infra/bicep/**/*.bicep,infra/terraform/**/*.tf}"
+      run: |
+        STAGED_IAC=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(bicep|tf)$' || true)
+        if [ -n "$STAGED_IAC" ]; then
+          echo "🔒 Checking IaC security baseline..."
+          npm run validate:iac-security-baseline
+        else
+          echo "ℹ️  No IaC files to security-check"
+        fi
+      fail_text: |
+        ❌ IaC security baseline violation!
+
+        🔧 Fix: TLS 1.2+, HTTPS-only, no public blob access, managed identity
+        📚 Reference: AGENTS.md Security Baseline section
+
 commit-msg:
   commands:
     commitlint:
@@ -200,6 +247,23 @@ commit-msg:
 pre-push:
   parallel: true
   commands:
+    branch-naming:
+      run: bash scripts/validate-branch-naming.sh
+      fail_text: |
+        ❌ Branch naming convention violated!
+
+        🔧 Rename your branch using an approved prefix:
+           docs/, agents/, skills/, infra/, scripts/, instructions/,
+           fix/, feat/, chore/, ci/, refactor/, perf/, test/, build/, revert/
+
+    branch-scope:
+      run: bash scripts/validate-branch-scope.sh
+      fail_text: |
+        ❌ Branch scope violation!
+
+        Domain-scoped branches (docs/, agents/, skills/, etc.) should only
+        modify files within their domain. Use feat/ or fix/ for cross-cutting changes.
+
     diff-based-check:
       run: bash scripts/diff-based-push-check.sh
       fail_text: |
@@ -223,6 +287,13 @@ post-commit:
         echo "🔍 Checking for deprecated references..."
         node scripts/validate-no-deprecated-refs.mjs
       fail_text: "❌ Deprecated references check failed"
+
+    terminology:
+      glob: "*.{md,mdx,json,mjs,py,yml,yaml,sh,toml,astro,css,html,txt,svg}"
+      run: |
+        echo "🔍 Checking terminology blocklist..."
+        node scripts/validate-terminology.mjs
+      fail_text: "❌ Terminology check failed"
 
     json-syntax:
       glob: "*.json"

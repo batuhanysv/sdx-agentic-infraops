@@ -24,13 +24,21 @@ tools:
     todo,
   ]
 handoffs:
-  - label: "↩ Return to Conductor"
-    agent: 01-Conductor
+  - label: "↩ Return to Orchestrator"
+    agent: 01-Orchestrator
     prompt: "Completed context optimization audit. Report saved. Advise on next steps."
     send: false
 ---
 
 # Context Window Optimizer Agent
+
+<!-- Recommended reasoning_effort: medium -->
+
+<investigate_before_answering>
+Before making optimization recommendations, analyze actual debug log data and measure
+real token costs. Do not recommend changes based on assumptions — verify file sizes,
+tool counts, and loading patterns from the logs.
+</investigate_before_answering>
 
 Audits how agents consume their context window and recommends structural
 improvements — hand-off points, skill splits, progressive loading fixes,
@@ -118,11 +126,13 @@ Store the label for Phase 6.
 
 1. Ask user which session(s) to analyze (latest, specific date, or all)
 2. Run the log parser script to extract structured data:
+
    ```bash
    python3 .github/skills/context-optimizer/scripts/parse-chat-logs.py \
      --log-dir ~/.vscode-server/data/logs/ \
      --output /tmp/context-audit.json
    ```
+
 3. Present session summary (total requests, models used, time range)
 
 **Checkpoint**: Confirm scope before deep analysis.
@@ -150,7 +160,7 @@ For each agent in `.github/agents/`:
 | Check                  | Flag When                                       |
 | ---------------------- | ----------------------------------------------- |
 | Tool count             | > 30 tools (each adds ~50-100 tokens to prompt) |
-| Body length            | > 300 lines in agent definition                 |
+| Body length            | > 350 lines in agent definition                 |
 | Inline templates       | Large fenced blocks that could be in skills     |
 | Missing handoffs       | Agent does work that should be delegated        |
 | Broad skill references | "Read ALL skills" instead of targeted loading   |

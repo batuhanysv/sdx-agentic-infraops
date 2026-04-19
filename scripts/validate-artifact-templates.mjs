@@ -1,165 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-
-// Artifact H2 structure definitions
-// Core artifacts (01, 02, 04, 06) use "standard" strictness
-// Wave 2 artifacts (05, 07-*) use "relaxed" strictness
-const ARTIFACT_HEADINGS = {
-  // Core artifacts (standard strictness)
-  "01-requirements.md": [
-    "## 🎯 Project Overview",
-    "## 🚀 Functional Requirements",
-    "## ⚡ Non-Functional Requirements (NFRs)",
-    "## 🔒 Compliance & Security Requirements",
-    "## 💰 Budget",
-    "## 🔧 Operational Requirements",
-    "## 🌍 Regional Preferences",
-    "## 📊 Complexity Classification",
-    "## 📋 Summary for Architecture Assessment",
-  ],
-  "02-architecture-assessment.md": [
-    "## ✅ Requirements Validation",
-    "## 💎 Executive Summary",
-    "## 🏛️ WAF Pillar Assessment",
-    "## 📦 Resource SKU Recommendations",
-    "## 🎯 Architecture Decision Summary",
-    "## 🚀 Implementation Handoff",
-    "## 🔒 Approval Gate",
-  ],
-  "04-implementation-plan.md": [
-    "## 📋 Overview",
-    "## 📦 Resource Inventory",
-    "## 🗂️ Module Structure",
-    "## 🔨 Implementation Tasks",
-    "## 🚀 Deployment Phases",
-    "## 🔗 Dependency Graph",
-    "## 🔄 Runtime Flow Diagram",
-    "## 🏷️ Naming Conventions",
-    "## 🔐 Security Configuration",
-    "## ⏱️ Estimated Implementation Time",
-    "## 🔒 Approval Gate",
-  ],
-  "04-governance-constraints.md": [
-    "## 🔍 Discovery Source",
-    "## 📋 Azure Policy Compliance",
-    "## 🔄 Plan Adaptations Based on Policies",
-    "## 🚫 Deployment Blockers",
-    "## 🏷️ Required Tags",
-    "## 🔐 Security Policies",
-    "## 💰 Cost Policies",
-    "## 🌐 Network Policies",
-  ],
-  "04-preflight-check.md": [
-    "## 🎯 Purpose",
-    "## ✅ AVM Schema Validation Results",
-    "## 🔎 Parameter Type Analysis",
-    "## 🌍 Region Limitations Identified",
-    "## ⚠️ Pitfalls Checklist",
-    "## 🚀 Ready for Implementation",
-  ],
-  "06-deployment-summary.md": [
-    "## ✅ Preflight Validation",
-    "## 📋 Deployment Details",
-    "## 🏗️ Deployed Resources",
-    "## 📤 Outputs (Expected)",
-    "## 🚀 To Actually Deploy",
-    "## 📝 Post-Deployment Tasks",
-  ],
-  // Wave 2 artifacts (relaxed strictness)
-  "05-implementation-reference.md": [
-    "## 📁 IaC Templates Location",
-    "## 🗂️ File Structure",
-    "## ✅ Validation Status",
-    "## 🏗️ Resources Created",
-    "## 🚀 Deployment Instructions",
-    "## 📝 Key Implementation Notes",
-  ],
-  "07-design-document.md": [
-    "## 📝 1. Introduction",
-    "## 🏛️ 2. Azure Architecture Overview",
-    "## 🌐 3. Networking",
-    "## 💾 4. Storage",
-    "## 💻 5. Compute",
-    "## 👤 6. Identity & Access",
-    "## 🔐 7. Security & Compliance",
-    "## 🔄 8. Backup & Disaster Recovery",
-    "## 📊 9. Management & Monitoring",
-    "## 📎 10. Appendix",
-  ],
-  "07-operations-runbook.md": [
-    "## ⚡ Quick Reference",
-    "## 📋 1. Daily Operations",
-    "## 🚨 2. Incident Response",
-    "## 🔧 3. Common Procedures",
-    "## 🕐 4. Maintenance Windows",
-    "## 📞 5. Contacts & Escalation",
-    "## 📝 6. Change Log",
-  ],
-  "07-resource-inventory.md": ["## 📊 Summary", "## 📦 Resource Listing"],
-  "07-backup-dr-plan.md": [
-    "## 📋 Executive Summary",
-    "## 🎯 1. Recovery Objectives",
-    "## 💾 2. Backup Strategy",
-    "## 🌍 3. Disaster Recovery Procedures",
-    "## 🧪 4. Testing Schedule",
-    "## 📢 5. Communication Plan",
-    "## 👥 6. Roles and Responsibilities",
-    "## 🔗 7. Dependencies",
-    "## 📖 8. Recovery Runbooks",
-    "## 📎 9. Appendix",
-  ],
-  "07-compliance-matrix.md": [
-    "## 📋 Executive Summary",
-    "## 🗺️ 1. Control Mapping",
-    "## 🔍 2. Gap Analysis",
-    "## 📁 3. Evidence Collection",
-    "## 📝 4. Audit Trail",
-    "## 🔧 5. Remediation Tracker",
-    "## 📎 6. Appendix",
-  ],
-  "07-documentation-index.md": [
-    "## 📦 1. Document Package Contents",
-    "## 📚 2. Source Artifacts",
-    "## 📋 3. Project Summary",
-    "## 🔗 4. Related Resources",
-    "## ⚡ 5. Quick Links",
-  ],
-  // Cost-estimate artifacts (shared structure for design + as-built)
-  "03-des-cost-estimate.md": [
-    "## 💵 Cost At-a-Glance",
-    "## ✅ Decision Summary",
-    "## 🔁 Requirements → Cost Mapping",
-    "## 📊 Top 5 Cost Drivers",
-    "## 🏛️ Architecture Overview",
-    "## 🧾 What We Are Not Paying For (Yet)",
-    "## ⚠️ Cost Risk Indicators",
-    "## 🎯 Quick Decision Matrix",
-    "## 💰 Savings Opportunities",
-    "## 🧾 Detailed Cost Breakdown",
-  ],
-  "07-ab-cost-estimate.md": [
-    "## 💵 Cost At-a-Glance",
-    "## ✅ Decision Summary",
-    "## 🔁 Requirements → Cost Mapping",
-    "## 📊 Top 5 Cost Drivers",
-    "## 🏛️ Architecture Overview",
-    "## 🧾 What We Are Not Paying For (Yet)",
-    "## ⚠️ Cost Risk Indicators",
-    "## 🎯 Quick Decision Matrix",
-    "## 💰 Savings Opportunities",
-    "## 🧾 Detailed Cost Breakdown",
-  ],
-  // Project README (content headings only — template has meta-headings)
-  "README.md": [
-    "## 📋 Project Summary",
-    "## ✅ Workflow Progress",
-    "## 🏛️ Architecture",
-    "## 📄 Generated Artifacts",
-    "## 🔗 Related Resources",
-  ],
-};
-
-export { ARTIFACT_HEADINGS };
+import { ARTIFACT_HEADINGS } from "./_lib/artifact-headings.mjs";
 
 // Per-artifact strictness configuration
 // "standard" = fail on issues, "relaxed" = warn on issues
@@ -240,9 +81,9 @@ const CONSOLIDATED_SKILL = ".github/skills/azure-artifacts/SKILL.md";
 const AGENTS = {
   "01-requirements.md": ".github/agents/02-requirements.agent.md",
   "02-architecture-assessment.md": ".github/agents/03-architect.agent.md",
-  // Both 05b-bicep-planner (Bicep) and 05t-terraform-planner (Terraform) produce these:
-  "04-implementation-plan.md": ".github/agents/05b-bicep-planner.agent.md",
-  "04-governance-constraints.md": ".github/agents/05b-bicep-planner.agent.md",
+  // 05-iac-planner (unified) produces these:
+  "04-implementation-plan.md": ".github/agents/05-iac-planner.agent.md",
+  "04-governance-constraints.md": ".github/agents/05-iac-planner.agent.md",
   "04-preflight-check.md": ".github/agents/06b-bicep-codegen.agent.md",
   "06-deployment-summary.md": ".github/agents/07b-bicep-deploy.agent.md",
   // Both 06b-bicep-codegen (Bicep) and 06t-terraform-codegen (Terraform)
@@ -300,8 +141,8 @@ const DIAGRAM_ARTIFACT_EXPECTATIONS = {
   ],
   "07-design-document.md": [
     {
-      image: "./03-des-diagram.png",
-      source: "./03-des-diagram.py",
+      image: "./03-des-diagram.drawio.svg",
+      source: "./03-des-diagram.drawio",
     },
     {
       image: "./03-des-network-diagram.png",
@@ -933,9 +774,12 @@ function findArtifacts() {
     .filter((entry) => {
       if (!entry.isFile()) return false;
       if (!artifactPatterns.some((p) => entry.name.endsWith(p))) return false;
-      // Skip the top-level agent-output/README.md
       const dir = entry.parentPath ?? entry.path;
+      // Skip the top-level agent-output/README.md
       if (entry.name === "README.md" && dir === baseDir) return false;
+      // Skip historical baseline snapshots
+      const rel = path.relative(baseDir, dir);
+      if (rel.startsWith("_baselines")) return false;
       return true;
     })
     .map((entry) => {

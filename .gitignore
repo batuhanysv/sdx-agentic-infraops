@@ -1,6 +1,7 @@
 # Azure
 *.azureauth
 *.publishsettings
+# Per-project azd environments (infra/{iac}/{project}/.azure/) and root .azure/
 .azure/
 local.settings.json
 
@@ -18,6 +19,10 @@ Copilot-Processing.md
 !.vscode/extensions.json
 !.vscode/mcp.json
 !.vscode/settings.json
+
+# Root .mcp.json is deprecated — Azure MCP is provided by the
+# ms-azuretools.vscode-azure-mcp-server extension. Use .vscode/mcp.json
+# for MCP server configuration.
 *.code-workspace
 
 # OS
@@ -51,10 +56,10 @@ bin/
 obj/
 dist/
 build/
-site/
 
 # Node (if any demos use it)
 node_modules/
+.pnpm-store/
 
 # Python (if any scripts)
 __pycache__/
@@ -79,8 +84,10 @@ freshness-report.json
 # Baseline snapshots (local working data for context optimizer)
 agent-output/_baselines/
 
-# MkDocs build output (deployed via gh-pages branch, not committed to main)
-site/
+# Astro Starlight (site/ is source code; only ignore build artifacts)
+site/dist/
+site/node_modules/
+site/.astro/
 
 # Terraform
 *.tfstate

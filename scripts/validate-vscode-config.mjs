@@ -36,6 +36,7 @@ const REQUIRED_EXTENSIONS = [
 // Keep this list explicit and minimal to avoid silent drift.
 const ALLOWED_DEVCONTAINER_ONLY_EXTENSIONS = new Set([
   "github.vscode-github-actions",
+  "pomdtr.excalidraw-editor",
   "mechatroner.rainbow-csv",
   "ms-azuretools.azure-dev",
   "ms-azuretools.vscode-azurecontainerapps",
@@ -119,7 +120,7 @@ function validateDevcontainer() {
     // Check if subagent setting is true
     if (settings["chat.customAgentInSubagent.enabled"] !== true) {
       errors.push(
-        "❌ chat.customAgentInSubagent.enabled must be true for Conductor orchestration",
+        "❌ chat.customAgentInSubagent.enabled must be true for Orchestrator",
       );
     }
 

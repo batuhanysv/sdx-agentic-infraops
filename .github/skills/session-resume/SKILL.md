@@ -1,7 +1,7 @@
 ---
 name: session-resume
-description: "Session state tracking and resume protocol for the 7-step agent workflow. USE FOR: resume session, persist progress, checkpoint recovery, session-state.json schema. DO NOT USE FOR: Azure infrastructure, code generation, architecture design, troubleshooting."
-compatibility: All agents (01-Conductor through 08-As-Built)
+description: "Session state tracking and resume protocol for the multi-step agent workflow. USE FOR: resume session, persist progress, checkpoint recovery, session-state.json schema. DO NOT USE FOR: Azure infrastructure, code generation, architecture design, troubleshooting."
+compatibility: All agents (01-Orchestrator through 08-As-Built)
 ---
 
 # Session Resume Skill
@@ -13,7 +13,7 @@ checkpoint after any interruption — mid-step, cross-step, or direct invocation
 
 - Starting / resuming any agent step
 - Completing a sub-step checkpoint or finishing a step
-- Conductor gate transitions
+- Orchestrator gate transitions
 - Recovering after a chat crash or thread switch
 
 ## Quick Reference
@@ -52,7 +52,7 @@ checkpoint after any interruption — mid-step, cross-step, or direct invocation
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "3.0",
   "project": "my-project",
   "current_step": 2,
   "updated": "2026-03-02T10:15:00Z",
@@ -66,45 +66,40 @@ checkpoint after any interruption — mid-step, cross-step, or direct invocation
 }
 ```
 
+## Schema Version Enforcement (MANDATORY)
+
+All agents MUST enforce schema version at read time:
+
+1. **On read**: Check `schema_version` field. If `"1.0"`, `"2.0"`, or missing → migrate to `"3.0"` immediately:
+   - Set `"schema_version": "3.0"`
+   - Remove `"lock"` object if present (no longer used)
+   - Remove `"stale_threshold_ms"` if present (no longer used)
+   - Remove `claim` objects from all steps if present (no longer used)
+   - Write the migrated file back atomically (write to `.tmp`, rename to target, keep `.bak`)
+2. **On create**: Always use `"schema_version": "3.0"`. Never create v1.0 or v2.0 files.
+3. **On mismatch**: If `schema_version` is not `"3.0"`, do NOT proceed with step work.
+   Migrate first, then proceed.
+
+### Corrupt State Recovery
+
+- Before `JSON.parse`: check file size > 0 bytes
+- If parse fails: check for `00-session-state.json.bak` — restore if found
+- If no backup exists: create fresh state from template, mark all steps `pending`, log recovery event
+- Atomic write protocol: write to `.tmp` first, rename to target, keep `.bak` of previous version
+
 ## Reference Index
 
 | Reference         | File                              | Content                                                                                       |
 | ----------------- | --------------------------------- | --------------------------------------------------------------------------------------------- |
-| Recovery Protocol | `references/recovery-protocol.md` | Resume detection, direct invocation, state write protocol, Conductor integration, portability |
-| State File Schema | `references/state-file-schema.md` | Full JSON template (v2.0), lock/claim field definitions, all 7 step definitions               |
+| Recovery Protocol | `references/recovery-protocol.md` | Resume detection, direct invocation, state write protocol, Orchestrator integration, portability |
+| State File Schema | `references/state-file-schema.md` | Full JSON template (v3.0), field definitions, all step definitions                            |
 | Context Budgets   | `references/context-budgets.md`   | Per-step file budget table, all sub-step checkpoint tables (Steps 1-7)                        |
 
-## Claim Protocol (v2.0)
+## Concurrency Note
 
-The v2.0 schema adds an atomic claim-based model to prevent concurrent
-sessions from double-writing the same step.
-
-### Lock Flow
-
-```text
-1. Read 00-session-state.json
-2. Check lock.heartbeat — stale (> stale_threshold_ms)?
-   YES → Clear lock, log recovery event, proceed
-   NO  → Lock held by another session — STOP, inform user
-3. Acquire lock: set lock.owner_id, lock.heartbeat, lock.attempt_token (UUID)
-4. Claim target step: set steps.{N}.claim.owner_id, attempt_token
-5. Proceed with step work
-6. On each sub-step: renew heartbeat (update lock.heartbeat + claim.heartbeat)
-7. On completion: release claim, clear lock
-```
-
-### Optimistic Concurrency
-
-All state writes MUST include the `attempt_token` from the active claim.
-If the token in the file does not match, the write is rejected — another
-session has taken over. The agent should halt and inform the user.
-
-## Multi-Session Safety
-
-When two Copilot chat sessions target the same project:
-
-1. **First session** writes its `owner_id` + `attempt_token` to the lock
-2. **Second session** reads the lock, sees a non-stale heartbeat → halts
-3. If the first session crashes (heartbeat goes stale), the second session
-   can recover via `sweepStale()` → clear the stale lock → re-claim
-4. All recovery events are logged to `claim.event_log` for audit
+VS Code Copilot executes agents serially — only one agent runs at a time
+within a single chat session. The v3.0 schema removed the lock/claim
+protocol (previously in v2.0) since concurrent agent execution does not
+occur. If two chat sessions target the same project, the last writer wins.
+The atomic write protocol (`.tmp` → rename → `.bak`) prevents corruption
+but does not prevent overwrites.
